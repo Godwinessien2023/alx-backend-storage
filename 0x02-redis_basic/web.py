@@ -1,45 +1,37 @@
 #!/usr/bin/env python3
 """
 Implementing an expiring web cache and tracker
-obtain the HTML content of a particular URL and returns it
+Obtain the HTML content of a particular URL and return it.
 """
 import redis
 import requests
-from typing import Callable
 
 # Connect to the Redis server
-cache = redis.Redis(host='localhost', port=6379, db=0)
+r = redis.Redis()
 
-def cache_with_count_and_expiration(expiration: int):
-    """A decorator for caching HTML content and tracking URL access counts."""
-    def decorator(func: Callable):
-        def wrapper(url: str) -> str:
-            # Construct the cache and count keys
-            cache_key = f"cache:{url}"
-            count_key = f"count:{url}"
-            
-            # Increment the access count
-            cache.incr(count_key)
-            
-            # Check if the HTML content is already cached
-            cached_content = cache.get(cache_key)
-            if cached_content:
-                print("Cache hit!")
-                return cached_content.decode("utf-8")
-            
-            # If not cached, fetch the content and store it in Redis
-            print("Cache miss! Fetching from the web...")
-            html_content = func(url)
-            cache.setex(cache_key, expiration, html_content)
-            return html_content
-        return wrapper
-    return decorator
-
-@cache_with_count_and_expiration(expiration=10)
 def get_page(url: str) -> str:
-    """Fetches the HTML content of a URL and caches it."""
-    response = requests.get(url)
-    return response.text
+    """
+    Track how many times a particular URL was accessed
+    in the key "count:{url}", and cache the result with an
+    expiration time of 10 seconds.
+    """
+    # Increment the access count
+    r.incr(f"count:{url}")
+    
+    # Check if the content is already cached
+    cached_content = r.get(f"cached:{url}")
+    if cached_content:
+        print("Cache hit!")
+        return cached_content.decode("utf-8")
+    
+    # If not cached, fetch the content and cache it
+    print("Cache miss! Fetching from the web...")
+    resp = requests.get(url)
+    
+    # Cache the content with a 10-second expiration
+    r.setex(f"cached:{url}", 10, resp.text)
+    
+    return resp.text
 
 
 if __name__ == "__main__":
