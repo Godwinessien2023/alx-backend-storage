@@ -5,21 +5,41 @@ obtain the HTML content of a particular URL and returns it
 """
 import redis
 import requests
-r = redis.Redis()
-count = 0
+from typing import Callable
 
+# Connect to the Redis server
+cache = redis.Redis(host='localhost', port=6379, db=0)
 
+def cache_with_count_and_expiration(expiration: int):
+    """A decorator for caching HTML content and tracking URL access counts."""
+    def decorator(func: Callable):
+        def wrapper(url: str) -> str:
+            # Construct the cache and count keys
+            cache_key = f"cache:{url}"
+            count_key = f"count:{url}"
+            
+            # Increment the access count
+            cache.incr(count_key)
+            
+            # Check if the HTML content is already cached
+            cached_content = cache.get(cache_key)
+            if cached_content:
+                print("Cache hit!")
+                return cached_content.decode("utf-8")
+            
+            # If not cached, fetch the content and store it in Redis
+            print("Cache miss! Fetching from the web...")
+            html_content = func(url)
+            cache.setex(cache_key, expiration, html_content)
+            return html_content
+        return wrapper
+    return decorator
+
+@cache_with_count_and_expiration(expiration=10)
 def get_page(url: str) -> str:
-    """
-    track how many times a particular URL was accessed in the key
-        "count:{url}"
-    and cache the result with an expiration time of 10 seconds
-    """
-    r.set(f"cached:{url}", count)
-    resp = requests.get(url)
-    r.incr(f"count:{url}")
-    r.setex(f"cached:{url}", 10, r.get(f"cached:{url}"))
-    return resp.text
+    """Fetches the HTML content of a URL and caches it."""
+    response = requests.get(url)
+    return response.text
 
 
 if __name__ == "__main__":
