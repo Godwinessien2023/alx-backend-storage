@@ -23,4 +23,5 @@ def get_page(url: str) -> str:
 
 
 if __name__ == "__main__":
-    get_page("http://slowwly.robertomurray.co.uk/delay/1000/url/http://www.google.co.uk")
+    get_page('http://slowwly.robertomurray.co.uk')
+    print("Access count:", r.get(f"count:http://google.com").decode("utf-8"))
