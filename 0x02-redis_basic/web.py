@@ -20,3 +20,7 @@ def get_page(url: str) -> str:
     r.incr(f"count:{url}")
     r.setex(f"cached:{url}", 10, r.get(f"cached:{url}"))
     return resp.text
+
+
+if __name__ == "__main__":
+    get_page("http://slowwly.robertomurray.co.uk/delay/1000/url/http://www.google.co.uk")
