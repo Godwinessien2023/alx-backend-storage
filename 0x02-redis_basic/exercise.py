@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-""" Writing strings to Redis abd Reading from Redis and recovering original type and
-    Incrementing values and Storing listsand Retrieving lists """
+"""
+Writing strings to Redis abd Reading from Redis and
+recovering original type and
+Incrementing values and Storing listsand Retrieving lists
+"""
 from typing import Union, Callable, Optional, Any
 import redis
 import uuid
